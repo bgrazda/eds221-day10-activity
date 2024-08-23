@@ -1,0 +1,96 @@
+---
+title: "eds-221 ICE AND METEORS RAHH"
+format: html
+editor: visual
+---
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+```
+```{r}
+ice <- read_csv(here("data", "ice.csv"), na = "-999")
+meteorological <- read_csv(here("data", "meteor.csv"))
+```
+
+
+```{r}
+sum_ice <- ice |> group_by(lakeid, year4) |> 
+  summarise(mean_ice_duration = mean(ice_duration))
+```
+
+```{r}
+ggplot(ice, aes(x = lakeid, y = ice_duration)) +
+  geom_jitter(size = .5, aes(color = lakeid)) +
+  geom_boxplot(alpha= .1, outlier.shape = NA) +
+  theme_light() +
+  labs(x = "Lake",
+       y = "Ice Duration (Days)",
+       color = "Lake ID")  
+```
+The overall trends of this graph shows that Wisconsin Lake had the highest overall year average ice duration in days. Mendota Lake had the lowest ice day year. 
+
+```{r}
+ggplot(sum_ice, aes(x = year4, y = mean_ice_duration)) +
+  geom_point() +
+  theme_classic() +
+  labs(x = "Year",
+       y = "Mean Ice Duration (days)") +
+   geom_smooth(method = "lm", se = FALSE)
+```
+The average days of ice per year is gradually decreasing over time. 
+
+```{r}
+
+winter <- meteorological |> 
+  filter(month %in% c(1,2, 12))
+
+lake_madison_air <- winter |> 
+  group_by(year4) |> 
+ summarise(ave_air_temp = mean(ave_air_temp_adjusted)) |> 
+  ungroup()
+
+ggplot(lake_madison_air, aes(x = year4, y = ave_air_temp)) +
+  geom_point() +
+  theme_classic() +
+  labs(x = "Year",
+       y = "Average Air Temperature") +
+   geom_smooth(method = "lm", se = FALSE)
+```
+Air temperature is gradually increasing every year in the months December, January, and February for the Lake Madison Area.
+
+```{r}
+join_lake_madison <- left_join(sum_ice, lake_madison_air) 
+  
+ggplot(join_lake_madison, aes(x = ave_air_temp, y = mean_ice_duration)) +
+  geom_point() +
+  theme_classic() +
+  labs(x = "Average Air Temp (Fahrenheit)",
+       y = "Ice Duration (Days)") +
+   geom_smooth(method = "lm", se = FALSE)
+
+```
+Ice days are gradually decreasing as air temperature is increasing. 
+
+
+```{r}
+thaw_dates_1970 <- ice |> 
+  mutate(ice_year = year(ymd(ice_off))) |> 
+  mutate(ice_day = yday(ymd(ice_off))) |> 
+  filter(ice_year >= 1970)
+``` 
+
+```{r}
+ggplot(thaw_dates_1970, aes(x = ice_year, y= ice_day)) +
+  geom_col() +
+  theme_classic() +
+  labs(x = "Year",
+       y = "Days",
+       title = "Lake Madison Ice Melt Dates per Year") +
+   geom_smooth(method = "lm", se = FALSE)
+```
+
+
+
+
+
